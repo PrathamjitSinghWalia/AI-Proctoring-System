@@ -1,8 +1,7 @@
 opencv-python-headless
 mediapipe==0.10.9
 ultralytics
-pandas
-matplotlib
+pandas==2.2.1
+matplotlib==3.8.3
 streamlit
-fpdf2
 numpy
