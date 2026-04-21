@@ -8,19 +8,8 @@ from datetime import datetime
 from PIL import Image
 import numpy as np
 
-# ============================
-# PAGE CONFIG
-# Must be the first Streamlit command
-# ============================
-st.set_page_config(
-    page_title="AI Proctoring System",
-    page_icon="🎓",
-    layout="wide"
-)
+st.set_page_config(page_title="AI Proctoring System", page_icon="🎓", layout="wide")
 
-# ============================
-# CUSTOM CSS
-# ============================
 st.markdown("""
 <style>
     .main-header {
@@ -43,9 +32,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ============================
-# HEADER
-# ============================
 st.markdown("""
 <div class="main-header">
     <h1>🎓 AI Proctoring System</h1>
@@ -53,28 +39,15 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ============================
-# SIDEBAR NAVIGATION
-# ============================
 st.sidebar.title("Navigation")
-page = st.sidebar.radio(
-    "Go to",
-    ["📊 Session Reports", "ℹ️ About"]
-)
-
-# ============================
-# HELPER FUNCTIONS
-# ============================
+page = st.sidebar.radio("Go to", ["📊 Session Reports", "ℹ️ About"])
 
 def load_session_data(csv_path):
-    """Load and prepare session CSV data"""
     df = pd.read_csv(csv_path)
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     return df
 
-
 def get_risk_level(score):
-    """Return risk level and color based on score"""
     if score < 10:
         return "LOW", "low-risk"
     elif score < 25:
@@ -82,9 +55,7 @@ def get_risk_level(score):
     else:
         return "HIGH", "high-risk"
 
-
 def plot_event_bar_chart(df):
-    """Generate bar chart for streamlit"""
     event_colors = {
         "LOOKING_AWAY": "#FFA500",
         "MULTIPLE_FACES": "#FF4500",
@@ -93,17 +64,12 @@ def plot_event_bar_chart(df):
         "LAPTOP_DETECTED": "#800080",
         "BOOK_DETECTED": "#4169E1",
     }
-
     event_counts = df['event_type'].value_counts()
     colors = [event_colors.get(e, "#888888") for e in event_counts.index]
-
     fig, ax = plt.subplots(figsize=(10, 4))
     bars = ax.bar(event_counts.index, event_counts.values, color=colors)
-
     for bar, count in zip(bars, event_counts.values):
-        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
-                str(count), ha='center', va='bottom', fontweight='bold')
-
+        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, str(count), ha='center', va='bottom', fontweight='bold')
     ax.set_title("Event Frequency", fontsize=13, fontweight='bold')
     ax.set_xlabel("Event Type")
     ax.set_ylabel("Count")
@@ -111,9 +77,7 @@ def plot_event_bar_chart(df):
     plt.tight_layout()
     return fig
 
-
 def plot_timeline(df):
-    """Generate timeline chart for streamlit"""
     event_colors = {
         "LOOKING_AWAY": "#FFA500",
         "MULTIPLE_FACES": "#FF4500",
@@ -122,20 +86,15 @@ def plot_timeline(df):
         "LAPTOP_DETECTED": "#800080",
         "BOOK_DETECTED": "#4169E1",
     }
-
     session_start = df['timestamp'].min()
     df['minutes_elapsed'] = (df['timestamp'] - session_start).dt.total_seconds() / 60
     event_types = df['event_type'].unique()
-
     fig, ax = plt.subplots(figsize=(12, 4))
-
     for i, event_type in enumerate(event_types):
         events = df[df['event_type'] == event_type]
         color = event_colors.get(event_type, "#888888")
-        ax.scatter(events['minutes_elapsed'], [i] * len(events),
-                  c=color, s=80, zorder=3)
+        ax.scatter(events['minutes_elapsed'], [i] * len(events), c=color, s=80, zorder=3)
         ax.axhline(y=i, color='gray', linestyle='--', alpha=0.3)
-
     ax.set_yticks(range(len(event_types)))
     ax.set_yticklabels(event_types, fontsize=9)
     ax.set_xlabel("Time into Exam (minutes)")
@@ -144,17 +103,12 @@ def plot_timeline(df):
     plt.tight_layout()
     return fig
 
-
 def plot_score_over_time(df):
-    """Generate suspicion score progression chart"""
     session_start = df['timestamp'].min()
     df['minutes_elapsed'] = (df['timestamp'] - session_start).dt.total_seconds() / 60
-
     fig, ax = plt.subplots(figsize=(12, 3))
-    ax.plot(df['minutes_elapsed'], df['cumulative_score'],
-            color='#dc3545', linewidth=2, marker='o', markersize=4)
-    ax.fill_between(df['minutes_elapsed'], df['cumulative_score'],
-                   alpha=0.2, color='#dc3545')
+    ax.plot(df['minutes_elapsed'], df['cumulative_score'], color='#dc3545', linewidth=2, marker='o', markersize=4)
+    ax.fill_between(df['minutes_elapsed'], df['cumulative_score'], alpha=0.2, color='#dc3545')
     ax.set_xlabel("Time into Exam (minutes)")
     ax.set_ylabel("Suspicion Score")
     ax.set_title("Suspicion Score Over Time", fontsize=13, fontweight='bold')
@@ -162,16 +116,18 @@ def plot_score_over_time(df):
     plt.tight_layout()
     return fig
 
-
-# ============================
-# PAGE: SESSION REPORTS
-# ============================
 if page == "📊 Session Reports":
     st.header("Session Reports")
-
-    # --- NEW INTERACTIVE CLOUD FEATURE ---
     st.markdown("---")
     st.subheader("📁 Upload a Session Report")
+    
+    st.markdown("Don't have a file? Download a sample to test the dashboard:")
+    try:
+        with open("sample_session.csv", "rb") as f:
+            st.download_button("📄 Download Sample CSV", f, file_name="sample_session.csv", mime="text/csv")
+    except FileNotFoundError:
+        st.error("Sample file not found on server.")
+
     st.markdown("Test the dashboard by uploading a `session_log.csv` file generated by the AI Proctor.")
     uploaded_file = st.file_uploader("Drag and drop your CSV file here", type=["csv"])
     st.markdown("---")
@@ -180,41 +136,24 @@ if page == "📊 Session Reports":
     session_name = "Uploaded_Session"
     is_uploaded_file = False
 
-    # Check if a file was uploaded via the browser
     if uploaded_file is not None:
         df = load_session_data(uploaded_file)
         session_name = uploaded_file.name.replace(".csv", "")
         is_uploaded_file = True
         st.success("File uploaded successfully! Generating live report...")
-    
-    # If no file is uploaded, fallback to looking for local files
     else:
         csv_files = glob.glob("logs/session_*.csv")
-        
         if not csv_files:
             st.info("No local session logs found. Please upload a CSV file above to view the dashboard.")
         else:
-            # Sort by most recent
             csv_files = sorted(csv_files, key=os.path.getmtime, reverse=True)
-
-            # Create dropdown to select session
-            session_names = [os.path.basename(f).replace("session_", "").replace(".csv", "")
-                            for f in csv_files]
-
-            selected_session = st.selectbox(
-                "Select Local Session to View",
-                session_names,
-                index=0
-            )
-
-            # Load selected session
+            session_names = [os.path.basename(f).replace("session_", "").replace(".csv", "") for f in csv_files]
+            selected_session = st.selectbox("Select Local Session to View", session_names, index=0)
             selected_csv = f"logs/session_{selected_session}.csv"
             df = load_session_data(selected_csv)
             session_name = selected_session
 
-    # --- RENDER DASHBOARD (Only if we have data) ---
     if df is not None:
-        # Session metrics
         total_score = df['cumulative_score'].max()
         total_events = len(df)
         session_start = df['timestamp'].min()
@@ -222,9 +161,7 @@ if page == "📊 Session Reports":
         duration = (session_end - session_start).total_seconds() / 60
         risk_level, risk_class = get_risk_level(total_score)
 
-        # Display metrics in columns
         col1, col2, col3, col4 = st.columns(4)
-
         with col1:
             st.metric("Total Events", total_events)
         with col2:
@@ -234,15 +171,10 @@ if page == "📊 Session Reports":
         with col4:
             st.metric("Risk Level", risk_level)
 
-        # Risk level indicator
-        st.markdown(f"### Risk Assessment: <span class='{risk_class}'>{risk_level}</span>",
-                   unsafe_allow_html=True)
-
-        # Score over time chart
+        st.markdown(f"### Risk Assessment: <span class='{risk_class}'>{risk_level}</span>", unsafe_allow_html=True)
         st.subheader("Suspicion Score Progression")
         st.pyplot(plot_score_over_time(df))
 
-        # Two charts side by side
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Event Frequency")
@@ -251,7 +183,6 @@ if page == "📊 Session Reports":
             st.subheader("Event Timeline")
             st.pyplot(plot_timeline(df))
 
-        # Event breakdown table
         st.subheader("Event Breakdown")
         event_summary = df.groupby('event_type').agg(
             Count=('event_type', 'count'),
@@ -261,14 +192,9 @@ if page == "📊 Session Reports":
         event_summary.columns = ['Event Type', 'Count', 'Severity Per Event', 'Total Score Impact']
         st.dataframe(event_summary, use_container_width=True)
 
-        # Full event log
         st.subheader("Full Event Log")
-        st.dataframe(
-            df[['timestamp', 'event_type', 'severity', 'details', 'cumulative_score']],
-            use_container_width=True
-        )
+        st.dataframe(df[['timestamp', 'event_type', 'severity', 'details', 'cumulative_score']], use_container_width=True)
 
-        # --- PDF Generation (Only for Local Files) ---
         if not is_uploaded_file:
             st.markdown("---")
             pdf_path = f"reports/report_{session_name}.pdf"
@@ -288,12 +214,8 @@ if page == "📊 Session Reports":
                     st.success("Report generated!")
                     st.rerun()
 
-# ============================
-# PAGE: ABOUT
-# ============================
 elif page == "ℹ️ About":
     st.header("About This System")
-
     st.markdown("""
     ## AI Proctoring System
     
